@@ -1,6 +1,5 @@
 package com.alibaba.ttl.threadpool;
 
-import com.alibaba.ttl.TransmittableThreadLocal;
 import com.alibaba.ttl.TtlCallable;
 import com.alibaba.ttl.TtlRunnable;
 import com.alibaba.ttl.spi.TtlEnhanced;
@@ -12,12 +11,9 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * {@link TransmittableThreadLocal} Wrapper of {@link ExecutorService},
- * transmit the {@link TransmittableThreadLocal} from the task submit time of {@link Runnable} or {@link Callable}
- * to the execution time of {@link Runnable} or {@link Callable}.
+ * ExecutorService包装类
  *
  * @author Jerry Lee (oldratlee at gmail dot com)
- * @since 0.9.0
  */
 @SuppressFBWarnings({"EQ_DOESNT_OVERRIDE_EQUALS"})
 class ExecutorServiceTtlWrapper extends ExecutorTtlWrapper implements ExecutorService, TtlEnhanced {
@@ -100,4 +96,5 @@ class ExecutorServiceTtlWrapper extends ExecutorTtlWrapper implements ExecutorSe
     public ExecutorService unwrap() {
         return executorService;
     }
+
 }
