@@ -24,27 +24,17 @@ import static com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.Utils.
  *
  * @author Jerry Lee (oldratlee at gmail dot com)
  * @author wuwen5 (wuwen.55 at aliyun dot com)
- * @see java.util.concurrent.Executor
- * @see java.util.concurrent.ExecutorService
- * @see java.util.concurrent.ThreadPoolExecutor
- * @see java.util.concurrent.ScheduledThreadPoolExecutor
- * @see java.util.concurrent.Executors
- * @see TtlPriorityBlockingQueueTransformlet
- * @since 2.5.1
  */
 public class TtlExecutorTransformlet implements JavassistTransformlet {
     private static final Logger logger = Logger.getLogger(TtlExecutorTransformlet.class);
 
     private static final Set<String> EXECUTOR_CLASS_NAMES = new HashSet<>();
     private static final Map<String, String> PARAM_TYPE_NAME_TO_DECORATE_METHOD_CLASS = new HashMap<>();
-
     private static final String THREAD_POOL_EXECUTOR_CLASS_NAME = "java.util.concurrent.ThreadPoolExecutor";
     private static final String RUNNABLE_CLASS_NAME = "java.lang.Runnable";
-
     static {
         EXECUTOR_CLASS_NAMES.add(THREAD_POOL_EXECUTOR_CLASS_NAME);
         EXECUTOR_CLASS_NAMES.add("java.util.concurrent.ScheduledThreadPoolExecutor");
-
         PARAM_TYPE_NAME_TO_DECORATE_METHOD_CLASS.put(RUNNABLE_CLASS_NAME, "com.alibaba.ttl.TtlRunnable");
         PARAM_TYPE_NAME_TO_DECORATE_METHOD_CLASS.put("java.util.concurrent.Callable", "com.alibaba.ttl.TtlCallable");
     }
@@ -59,9 +49,6 @@ public class TtlExecutorTransformlet implements JavassistTransformlet {
 
     @Override
     public void doTransform(@NonNull final ClassInfo classInfo) throws IOException, NotFoundException, CannotCompileException {
-        // work-around ClassCircularityError:
-        //      https://github.com/alibaba/transmittable-thread-local/issues/278
-        //      https://github.com/alibaba/transmittable-thread-local/issues/234
         if (isClassAtPackageJavaUtil(classInfo.getClassName())) return;
 
         final CtClass clazz = classInfo.getCtClass();
@@ -69,18 +56,14 @@ public class TtlExecutorTransformlet implements JavassistTransformlet {
             for (CtMethod method : clazz.getDeclaredMethods()) {
                 updateSubmitMethodsOfExecutorClass_decorateToTtlWrapperAndSetAutoWrapperAttachment(method);
             }
-
             if (disableInheritableForThreadPool) updateConstructorDisableInheritable(clazz);
-
             classInfo.setModified();
         } else {
             if (clazz.isPrimitive() || clazz.isArray() || clazz.isInterface() || clazz.isAnnotation()) {
                 return;
             }
             if (!clazz.subclassOf(clazz.getClassPool().get(THREAD_POOL_EXECUTOR_CLASS_NAME))) return;
-
             logger.info("Transforming class " + classInfo.getClassName());
-
             final boolean modified = updateBeforeAndAfterExecuteMethodOfExecutorSubclass(clazz);
             if (modified) classInfo.setModified();
         }
