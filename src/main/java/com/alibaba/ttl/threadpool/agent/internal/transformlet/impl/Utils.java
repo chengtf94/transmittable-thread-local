@@ -100,30 +100,21 @@ public class Utils {
     @Nullable
     public static Runnable doAutoWrap(@Nullable final Runnable runnable) {
         if (runnable == null) return null;
-
         final TtlRunnable ret = TtlRunnable.get(runnable, false, true);
-
-        // have been auto wrapped?
         if (ret != runnable) setAutoWrapperAttachment(ret);
-
         return ret;
     }
 
     @Nullable
     public static <T> Callable<T> doAutoWrap(@Nullable final Callable<T> callable) {
         if (callable == null) return null;
-
         final TtlCallable<T> ret = TtlCallable.get(callable, false, true);
-
-        // have been auto wrapped?
         if (ret != callable) setAutoWrapperAttachment(ret);
-
         return ret;
     }
 
     private static void setAutoWrapperAttachment(@Nullable final Object ttlAttachment) {
         if (!(ttlAttachment instanceof TtlAttachments)) return;
-
         ((TtlAttachments) ttlAttachment).setTtlAttachment(TtlAttachments.KEY_IS_AUTO_WRAPPER, true);
     }
 

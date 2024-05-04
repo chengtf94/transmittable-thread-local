@@ -32,6 +32,7 @@ public class TtlExecutorTransformlet implements JavassistTransformlet {
     private static final Map<String, String> PARAM_TYPE_NAME_TO_DECORATE_METHOD_CLASS = new HashMap<>();
     private static final String THREAD_POOL_EXECUTOR_CLASS_NAME = "java.util.concurrent.ThreadPoolExecutor";
     private static final String RUNNABLE_CLASS_NAME = "java.lang.Runnable";
+    private static final String THREAD_FACTORY_CLASS_NAME = "java.util.concurrent.ThreadFactory";
     static {
         EXECUTOR_CLASS_NAMES.add(THREAD_POOL_EXECUTOR_CLASS_NAME);
         EXECUTOR_CLASS_NAMES.add("java.util.concurrent.ScheduledThreadPoolExecutor");
@@ -39,10 +40,10 @@ public class TtlExecutorTransformlet implements JavassistTransformlet {
         PARAM_TYPE_NAME_TO_DECORATE_METHOD_CLASS.put("java.util.concurrent.Callable", "com.alibaba.ttl.TtlCallable");
     }
 
-    private static final String THREAD_FACTORY_CLASS_NAME = "java.util.concurrent.ThreadFactory";
-
+    /**
+     * 构造方法
+     */
     private final boolean disableInheritableForThreadPool;
-
     public TtlExecutorTransformlet(boolean disableInheritableForThreadPool) {
         this.disableInheritableForThreadPool = disableInheritableForThreadPool;
     }
@@ -50,7 +51,6 @@ public class TtlExecutorTransformlet implements JavassistTransformlet {
     @Override
     public void doTransform(@NonNull final ClassInfo classInfo) throws IOException, NotFoundException, CannotCompileException {
         if (isClassAtPackageJavaUtil(classInfo.getClassName())) return;
-
         final CtClass clazz = classInfo.getCtClass();
         if (EXECUTOR_CLASS_NAMES.contains(classInfo.getClassName())) {
             for (CtMethod method : clazz.getDeclaredMethods()) {
@@ -73,7 +73,7 @@ public class TtlExecutorTransformlet implements JavassistTransformlet {
      * @see com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.Utils#doAutoWrap(Runnable)
      * @see com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.Utils#doAutoWrap(Callable)
      */
-    @SuppressFBWarnings("VA_FORMAT_STRING_USES_NEWLINE") // [ERROR] Format string should use %n rather than \n
+    @SuppressFBWarnings("VA_FORMAT_STRING_USES_NEWLINE")
     private void updateSubmitMethodsOfExecutorClass_decorateToTtlWrapperAndSetAutoWrapperAttachment(@NonNull final CtMethod method) throws NotFoundException, CannotCompileException {
         final int modifiers = method.getModifiers();
         if (!Modifier.isPublic(modifiers) || Modifier.isStatic(modifiers)) return;
@@ -127,7 +127,6 @@ public class TtlExecutorTransformlet implements JavassistTransformlet {
         final CtClass threadClass = clazz.getClassPool().get("java.lang.Thread");
         final CtClass throwableClass = clazz.getClassPool().get("java.lang.Throwable");
         boolean modified = false;
-
         try {
             final CtMethod beforeExecute = clazz.getDeclaredMethod("beforeExecute", new CtClass[]{threadClass, runnableClass});
             // unwrap runnable if IsAutoWrapper
